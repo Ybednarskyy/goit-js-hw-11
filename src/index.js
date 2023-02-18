@@ -7,12 +7,32 @@ import 'simplelightbox/dist/simple-lightbox.min.css';
 
 const refs = {
   form: document.querySelector('.search-form'),
+  input: document.querySelector('input'),
   submit: document.querySelector('button[type="submit"]'),
   loadMore: document.querySelector('.load-more'),
   gallery: document.querySelector('.gallery'),
 };
 
-// console.log('submit -> ', refs.submit);
+let description = null;
+let currentPage = 1;
+
+refs.submit.addEventListener('click', clickSubmitHandler);
+refs.loadMore.addEventListener('click', loadMoreHandler);
+
+function clickSubmitHandler(e) {
+  e.preventDefault();
+
+  refs.gallery.innerHTML = '';
+  description = refs.input.value;
+  getImages(description);
+
+  console.log(refs.form.elements[0].value);
+}
+
+function loadMoreHandler() {
+  currentPage++;
+  getImages(description);
+}
 
 async function getImages(description) {
   await axios
@@ -23,7 +43,7 @@ async function getImages(description) {
         image_type: 'photo',
         orientation: 'horizontal',
         safesearch: 'true',
-        page: '1',
+        page: currentPage,
         per_page: '40',
       },
     })
@@ -41,7 +61,7 @@ async function getImages(description) {
     });
 }
 
-console.log(getImages());
+// console.log(getImages());
 
 function makeImagesList(imalges) {
   const markup = imalges
@@ -55,8 +75,9 @@ function makeImagesList(imalges) {
         comments,
         downloads,
       }) => {
-        return `<div class="photo-card">
-      <img src="${webformatURL}" alt="${tags}" loading="lazy" />
+        return `<li class="photo-card gallery__item">
+      <a class="gallery__item" href=${largeImageURL}>
+      <img class="gallery__image" src="${webformatURL}" alt="${tags}" loading="lazy" />
       <div class="info">
         <p class="info-item">
           <b>Likes</b> ${likes}
@@ -71,9 +92,17 @@ function makeImagesList(imalges) {
           <b>Downloads</b> ${downloads}
         </p>
       </div>
-    </div>`;
+      </a>
+    </li>`;
       }
     )
     .join('');
   refs.gallery.innerHTML = markup;
+
+  lightBox.refresh();
 }
+
+const lightBox = new SimpleLightbox('.gallery a', {
+  captionsData: 'alt',
+  captionDelay: 250,
+});
